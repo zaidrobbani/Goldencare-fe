@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLogin } from "@/repository/auth/query";
 import { useAuthStore } from "@/store/authStore";
+import { useToast } from "@/shared/Toast/ToastProvider";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -17,9 +18,9 @@ export default function Login() {
   const router = useRouter();
   const { mutate: login, isPending } = useLogin();
   const { user } = useAuthStore();
+  const { error: showError } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
 
   React.useEffect(() => {
     if (!user) {
@@ -44,10 +45,8 @@ export default function Login() {
   }, [user, router]);
 
   const handleSubmit = () => {
-    setErrorMsg("");
-
     if (!email.trim() || !password.trim()) {
-      setErrorMsg("Email dan password wajib diisi.");
+      showError("Email dan password wajib diisi.");
       return;
     }
 
@@ -56,30 +55,19 @@ export default function Login() {
       {
         onSuccess: (result) => {
           if (!result.success) {
-            setErrorMsg(result.error || "Login gagal. Periksa email dan password kamu.");
+            showError(result.error || "Login gagal. Periksa email dan password kamu.");
             return;
           }
 
           const role = result.data?.role;
-          if (role === "superadmin") {
-            router.push("/dashboard");
-          }
-
-          if (role === "keluarga") {
-            router.push("/memori-tamu");
-          }
-
-          if (role === "pengelola") {
-            router.push("/dashboard");
-          }
-
-          if (role === "perawat") {
-            router.push("/jurnal-jaga");
-          }
+          if (role === "superadmin") router.push("/dashboard");
+          if (role === "keluarga") router.push("/memori-tamu");
+          if (role === "pengelola") router.push("/dashboard");
+          if (role === "perawat") router.push("/jurnal-jaga");
         },
 
-        onError: (error) => {
-          setErrorMsg(error?.message || "Login gagal. Periksa email dan password kamu.");
+        onError: (err) => {
+          showError(err?.message || "Login gagal. Periksa email dan password kamu.");
         },
       }
     );
@@ -162,8 +150,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Error message */}
-          {errorMsg && <p className="text-xs text-error font-body -mt-1">{errorMsg}</p>}
+
 
           {/* Submit */}
           <button

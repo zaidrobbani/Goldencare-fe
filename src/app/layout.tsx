@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryClientProvider from "@/layout/QueryClient";
+import { ToastProvider } from "@/shared/Toast/ToastProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,7 +29,9 @@ export default function RootLayout({
       <head></head>
       <body className="min-h-full flex flex-col">
         <QueryClientProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </QueryClientProvider>
       </body>
     </html>

@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRegister } from "@/repository/auth/query";
 import type { Roles } from "@/repository/auth/dto";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/shared/Toast/ToastProvider";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
@@ -43,6 +44,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { mutate: register, isPending } = useRegister();
+  const { error: showError, success: showSuccess } = useToast();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,23 +55,20 @@ export default function Register() {
   const [agreed, setAgreed] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    setErrorMsg(null);
-
     if (!name || !email || !password || !confirmPassword || !role || !kodeUndangan) {
-      setErrorMsg("Please fill in all fields.");
+      showError("Please fill in all fields.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
+      showError("Passwords do not match.");
       return;
     }
 
     if (!agreed) {
-      setErrorMsg("You must agree to the Terms of Service and Privacy Policy.");
+      showError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
@@ -78,15 +77,16 @@ export default function Register() {
       {
         onSuccess: (res) => {
           if (!res.success) {
-            setErrorMsg(res.error || "Registration failed. Please try again.");
+            showError(res.error || "Registration failed. Please try again.");
             return;
           }
 
+          showSuccess("Akun berhasil dibuat! Silakan login.");
           router.push("/login");
         },
 
         onError: (err) => {
-          setErrorMsg(err.message || "An unexpected error occurred. Please try again.");
+          showError(err.message || "An unexpected error occurred. Please try again.");
         },
       }
     );
@@ -301,7 +301,7 @@ export default function Register() {
               </span>
             </label>
 
-            {errorMsg && <p className="text-xs text-error font-body text-center">{errorMsg}</p>}
+
 
             {/* Submit — kosmetik */}
             <button
