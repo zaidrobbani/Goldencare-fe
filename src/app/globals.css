@@ -1,26 +1,106 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-container: #fffbff;
+  --color-inverse-surface: #2e3222;
+  --color-surface-container-highest: #e0e5cc;
+  --color-secondary-container: #afddfe;
+  --color-surface-container: #ecf0d8;
+  --color-on-secondary-fixed: #001e2e;
+  --color-error: #ba1a1a;
+  --color-tertiary-fixed-dim: #f0bd8b;
+  --color-on-primary: #ffffff;
+  --color-on-error: #ffffff;
+  --color-surface-dim: #d8dcc4;
+  --color-inverse-on-surface: #eff3da;
+  --color-on-surface-variant: #3f4943;
+  --color-primary: #0b6947;
+  --color-outline-variant: #bec9c0;
+  --color-background-custom: #f7fce3;
+  --color-tertiary-container: #966c41;
+  --color-secondary: #356380;
+  --color-on-primary-container: #f5fff6;
+  --color-on-tertiary: #ffffff;
+  --color-surface: #f7fce3;
+  --color-error-container: #ffdad6;
+  --color-primary-fixed: #a1f4c8;
+  --color-on-error-container: #93000a;
+  --color-surface-bright: #f7fce3;
+  --color-primary-fixed-dim: #86d7ad;
+  --color-outline: #6f7a72;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-fixed-variant: #194b67;
+  --color-tertiary: #7b542b;
+  --color-surface-tint: #116c4a;
+  --color-on-primary-fixed-variant: #005236;
+  --color-secondary-fixed-dim: #9fcced;
+  --color-primary-container: #30835f;
+  --color-surface-container-high: #e6ebd2;
+  --color-tertiary-fixed: #ffdcbd;
+  --color-on-primary-fixed: #002113;
+  --color-surface-variant: #e0e5cc;
+  --color-inverse-primary: #86d7ad;
+  --color-secondary-fixed: #c7e7ff;
+  --color-on-secondary-container: #34627e;
+  --color-on-tertiary-fixed: #2c1600;
+  --color-on-surface: #191d0e;
+  --color-on-tertiary-fixed-variant: #623f18;
+  --color-surface-container-low: #f2f6dd;
+  --color-on-background: #191d0e;
+
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  --font-headline: "Plus Jakarta Sans";
+  --font-body: "Public Sans";
+  --font-label: "Public Sans";
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Public Sans", sans-serif;
+    background-color: #f7fce3;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: "Plus Jakarta Sans", sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px; /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
 }
