@@ -23,6 +23,14 @@ jobs:
         run: |
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Write .env to VPS
+        env:
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          NEXT_BASE_API_URL: ${{ secrets.NEXT_BASE_API_URL }}
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "printf 'COOKIE_SECRET=%s\nNEXT_BASE_API_URL=%s\n' '$COOKIE_SECRET' '$NEXT_BASE_API_URL' > ~/Goldencare-fe/.env.local"
+            
       - name: Deploy to VPS
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
