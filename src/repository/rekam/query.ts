@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getGaleriByLansiaAction, tambahGaleriAction } from "./action";
-import type { GaleriData } from "./dto";
+import { getGaleriByLansiaAction, getGaleriOptionsAction, tambahGaleriAction, tambahPemeriksaanAction } from "./action";
+import type { GaleriData, GaleriOptions, TambahPemeriksaanRequest, TambahPemeriksaanResult } from "./dto";
 import type { ActionResult } from "@/lib/return-response";
 
 export function useTambahGaleri() {
@@ -28,5 +28,23 @@ export function useGetGaleriByLansia(lansiaId: string | null) {
       return result.data ?? [];
     },
     enabled: !!lansiaId,
+  });
+}
+
+export function useGetGaleriOptions() {
+  return useQuery<GaleriOptions, Error>({
+    queryKey: ["galeri-options"],
+    queryFn: async () => {
+      const result = await getGaleriOptionsAction();
+      if (!result.success) throw new Error(result.error);
+      return result.data!;
+    },
+    staleTime: 1000 * 60 * 10, // cache 10 menit, data statis
+  });
+}
+
+export function useTambahPemeriksaan() {
+  return useMutation<ActionResult<TambahPemeriksaanResult>, Error, TambahPemeriksaanRequest>({
+    mutationFn: (payload) => tambahPemeriksaanAction(payload),
   });
 }

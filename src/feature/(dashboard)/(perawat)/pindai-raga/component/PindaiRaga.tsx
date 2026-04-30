@@ -8,14 +8,14 @@ import FlashlightOnOutlinedIcon from "@mui/icons-material/FlashlightOnOutlined";
 import FlashlightOffOutlinedIcon from "@mui/icons-material/FlashlightOffOutlined";
 import FlipCameraAndroidOutlinedIcon from "@mui/icons-material/FlipCameraAndroidOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import NoPhotographyOutlinedIcon from "@mui/icons-material/NoPhotographyOutlined";
+import Dropdown from "@/shared/DropDown/DropDown";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import LansiaDropdown from "@/shared/LansiaDropDown/LansiaDropdown";
-import { useTambahGaleri, useGetGaleriByLansia } from "@/repository/rekam/query";
+import { useTambahGaleri, useGetGaleriByLansia, useGetGaleriOptions } from "@/repository/rekam/query";
 import { useGetLansiaByPengurus } from "@/repository/lansia/query";
 import { useToast } from "@/shared/Toast/ToastProvider";
 import type { TingkatDarurat } from "@/repository/rekam/dto";
@@ -39,38 +39,6 @@ const tingkatConfig: Record<TingkatDarurat, { badge: string; dot: string }> = {
     dot: "text-error",
   },
 };
-
-const LOKASI_OPTIONS = [
-  "Kepala",
-  "Wajah",
-  "Leher",
-  "Bahu Kiri",
-  "Bahu Kanan",
-  "Lengan Atas Kiri",
-  "Lengan Atas Kanan",
-  "Lengan Bawah Kiri",
-  "Lengan Bawah Kanan",
-  "Tangan Kiri",
-  "Tangan Kanan",
-  "Dada",
-  "Punggung Atas",
-  "Punggung Bawah",
-  "Perut",
-  "Pinggang",
-  "Pinggul",
-  "Paha Kiri",
-  "Paha Kanan",
-  "Lutut Kiri",
-  "Lutut Kanan",
-  "Betis Kiri",
-  "Betis Kanan",
-  "Pergelangan Kaki Kiri",
-  "Pergelangan Kaki Kanan",
-  "Kaki Kiri",
-  "Kaki Kanan",
-  "Tumit Kiri",
-  "Tumit Kanan",
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatTanggal(iso: string) {
@@ -217,45 +185,6 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
   );
 }
 
-// ── Lansia Dropdown ───────────────────────────────────────────────────────────
-
-
-// ── Select Field ──────────────────────────────────────────────────────────────
-function SelectField({
-  options,
-  value,
-  onChange,
-  placeholder,
-}: {
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-sm font-body pr-8 focus:outline-none focus:border-primary transition-colors cursor-pointer ${value ? "text-on-surface" : "text-outline"}`}
-      >
-        <option value="" disabled hidden>
-          {placeholder}
-        </option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      <KeyboardArrowDownIcon
-        fontSize="small"
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-      />
-    </div>
-  );
-}
-
 // ── Riwayat Skeleton ──────────────────────────────────────────────────────────
 function RiwayatSkeleton() {
   return (
@@ -279,7 +208,11 @@ export default function PindaiRaga() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutate: tambahGaleri, isPending } = useTambahGaleri();
   const { data: lansiaList = [], isLoading: lansiaLoading } = useGetLansiaByPengurus();
+  const { data: galeriOptions, isLoading: optionsLoading } = useGetGaleriOptions();
   const { success: showSuccess, error: showError } = useToast();
+
+  const lokasiOptions = (galeriOptions?.lokasi_tubuh ?? []).map((v) => ({ value: v, label: v }));
+  const jenisKondisiOptions = (galeriOptions?.jenis_kondisi ?? []).map((v) => ({ value: v, label: v }));
 
   const [selectedLansiaId, setSelectedLansiaId] = useState<string | null>(
     () => lansiaList[0]?.id ?? null
@@ -289,7 +222,8 @@ export default function PindaiRaga() {
   const [isDragging, setIsDragging] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [deskripsi, setDeskripsi] = useState("");
-  const [lokasi, setLokasi] = useState("");
+  const [lokasi, setLokasi] = useState<string | null>(null);
+  const [jenisKondisi, setJenisKondisi] = useState<string | null>(null);
 
   // ── Fetch riwayat berdasarkan lansia yang dipilih ──────────────────────────
   const {
@@ -327,7 +261,8 @@ export default function PindaiRaga() {
     setPhoto(null);
     setPhotoFile(null);
     setDeskripsi("");
-    setLokasi("");
+    setLokasi(null);
+    setJenisKondisi(null);
     setShowCamera(false);
   };
 
@@ -340,15 +275,16 @@ export default function PindaiRaga() {
       showError("Foto wajib diunggah.");
       return;
     }
-    if (!lokasi || !deskripsi) {
-      showError("Lokasi dan deskripsi wajib diisi.");
+    if (!lokasi || !jenisKondisi || !deskripsi) {
+      showError("Lokasi, jenis kondisi, dan deskripsi wajib diisi.");
       return;
     }
 
     const formData = new FormData();
     formData.append("lansia_id", selectedLansiaId);
     formData.append("foto", photoFile);
-    formData.append("lokasi_luka", lokasi);
+    formData.append("lokasi_luka", lokasi!);
+    formData.append("jenis_kondisi", jenisKondisi!);
     formData.append("deskripsi", deskripsi);
 
     tambahGaleri(formData, {
@@ -371,7 +307,7 @@ export default function PindaiRaga() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-8 min-h-screen bg-surface">
+    <div className="flex flex-col gap-6 p-8 h-screen  bg-surface">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -495,17 +431,23 @@ export default function PindaiRaga() {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium font-body text-on-surface-variant">
-              Lokasi pada Tubuh
-            </label>
-            <SelectField
-              options={LOKASI_OPTIONS}
-              value={lokasi}
-              onChange={setLokasi}
-              placeholder="Pilih lokasi..."
-            />
-          </div>
+          <Dropdown<string>
+            label="Jenis Kondisi"
+            options={jenisKondisiOptions}
+            value={jenisKondisi}
+            onChange={setJenisKondisi}
+            placeholder={optionsLoading ? "Memuat opsi..." : "Pilih jenis kondisi..."}
+            disabled={optionsLoading || isPending}
+          />
+
+          <Dropdown<string>
+            label="Lokasi pada Tubuh"
+            options={lokasiOptions}
+            value={lokasi}
+            onChange={setLokasi}
+            placeholder={optionsLoading ? "Memuat opsi..." : "Pilih lokasi..."}
+            disabled={optionsLoading || isPending}
+          />
 
           <div className="flex items-center justify-end gap-3 pt-1">
             <button

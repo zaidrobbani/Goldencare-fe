@@ -58,7 +58,7 @@ export default function Dropdown<T extends string>({
 
         {/* Dropdown panel — smooth slide down */}
         <div
-          className={`absolute z-50 left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-lg transition-all duration-200 origin-top ${
+          className={`absolute z-50 left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-y-auto max-h-52 shadow-lg transition-all duration-200 origin-top ${
             open
               ? "opacity-100 scale-y-100 translate-y-0"
               : "opacity-0 scale-y-95 -translate-y-1 pointer-events-none"

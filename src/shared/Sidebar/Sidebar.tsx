@@ -161,7 +161,7 @@ export const Sidebar = ({ roles }: SidebarProps) => {
   const error = logout.error instanceof Error ? logout.error.message : null;
 
   return (
-    <aside className="flex flex-col w-[288px] min-h-screen h-full shrink-0 bg-surface-container-low border-r border-outline-variant">
+    <aside className="flex flex-col w-[288px] h-full shrink-0 bg-surface-container-low border-r border-outline-variant">
       {/* Header / Brand */}
       <div className="flex flex-col items-center justify-center px-6 pt-8 pb-6 gap-3">
         <div className="w-20 h-20 bg-surface-variant flex items-center justify-center rounded-xl overflow-hidden">

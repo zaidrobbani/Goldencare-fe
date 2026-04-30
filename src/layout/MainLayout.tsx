@@ -26,16 +26,12 @@ export default function MainLayout({
   roles,
 }: MainLayoutProps) {
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar — sticky, full viewport height */}
-      {withSidebar && (
-        <div className="sticky top-0 h-screen">
-          <Sidebar roles={roles ?? "pengelola"} />
-        </div>
-      )}
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar — fixed viewport height, follows layout */}
+      {withSidebar && <Sidebar roles={roles ?? "pengelola"} />}
 
       {/* Main content area */}
-      <main className={`flex flex-col flex-1 min-w-0 ${className ?? ""}`}>
+      <main className={`flex flex-col flex-1 min-w-0 overflow-y-auto ${className ?? ""}`}>
         {withNavbar && <Navbar />}
 
         <div className={`flex-1 ${contentClassName ?? ""}`}>{children}</div>

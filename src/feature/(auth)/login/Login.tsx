@@ -40,7 +40,7 @@ export default function Login() {
     }
 
     if (role === "pengurus") {
-      router.push("/jurnal-jaga");
+      router.push("/pindai-raga");
     }
   }, [user, router]);
 
