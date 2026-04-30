@@ -29,8 +29,8 @@ jobs:
           NEXT_BASE_API_URL: ${{ secrets.NEXT_BASE_API_URL }}
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "printf 'COOKIE_SECRET=%s\nNEXT_BASE_API_URL=%s\n' '$COOKIE_SECRET' '$NEXT_BASE_API_URL' > ~/Goldencare-fe/.env.local"
-            
+            "printf 'COOKIE_SECRET=%s\nNEXT_BASE_API_URL=%s\n' '$COOKIE_SECRET' '$NEXT_BASE_API_URL' > ~/Goldencare-fe/.env"
+
       - name: Deploy to VPS
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'

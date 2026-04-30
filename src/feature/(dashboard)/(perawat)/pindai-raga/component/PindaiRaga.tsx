@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 import AddAPhotoOutlinedIcon from "@mui/icons-material/AddAPhotoOutlined";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
@@ -11,47 +11,34 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import NoPhotographyOutlinedIcon from "@mui/icons-material/NoPhotographyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import { useTambahGaleri } from "@/repository/rekam/query";
+import LansiaDropdown from "@/shared/LansiaDropDown/LansiaDropdown";
+import { useTambahGaleri, useGetGaleriByLansia } from "@/repository/rekam/query";
 import { useGetLansiaByPengurus } from "@/repository/lansia/query";
 import { useToast } from "@/shared/Toast/ToastProvider";
+import type { TingkatDarurat } from "@/repository/rekam/dto";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-type BadgeStatus = "Risiko Rendah" | "Pantau" | "Kritis";
-
-interface RiwayatItem {
-  id: number;
-  title: string;
-  date: string;
-  description: string;
-  badge: BadgeStatus;
-  imageSrc?: string;
-  active: boolean;
-}
-
-const RIWAYAT_DATA: RiwayatItem[] = [
-  {
-    id: 1,
-    title: "Memar Lengan Kiri",
-    date: "12 Okt, 10:30 Pagi",
-    description: "Luka memar kecil akibat benturan ringan pada pintu.",
-    badge: "Risiko Rendah",
-    active: true,
+// ── Badge Config ───────────────────────────────────────────────────────────────
+const tingkatConfig: Record<TingkatDarurat, { badge: string; dot: string }> = {
+  ringan: {
+    badge: "bg-primary-fixed text-primary",
+    dot: "text-primary",
   },
-  {
-    id: 2,
-    title: "Kemerahan Tumit Kanan",
-    date: "05 Okt, 08:15 Pagi",
-    description: "Terlihat sedikit kemerahan pada tumit kanan saat rutinitas perawatan pagi...",
-    badge: "Pantau",
-    active: false,
+  sedang: {
+    badge: "bg-tertiary-fixed text-tertiary",
+    dot: "text-tertiary",
   },
-];
+  tinggi: {
+    badge: "bg-warning-container text-warning",
+    dot: "text-warning",
+  },
+  kritis: {
+    badge: "bg-error-container text-error",
+    dot: "text-error",
+  },
+};
 
 const LOKASI_OPTIONS = [
   "Kepala",
@@ -85,13 +72,26 @@ const LOKASI_OPTIONS = [
   "Tumit Kanan",
 ];
 
-const badgeConfig: Record<BadgeStatus, string> = {
-  "Risiko Rendah": "bg-primary-fixed text-primary",
-  Pantau: "bg-tertiary-fixed text-tertiary",
-  Kritis: "bg-error-container text-error",
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatTanggal(iso: string) {
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
-// ── Camera Box (inline, bukan fullscreen) ──────────────────────────────────────
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(",");
+  const mime = arr[0].match(/:(.*?);/)![1];
+  const bstr = atob(arr[1]);
+  const u8arr = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+  return new File([u8arr], filename, { type: mime });
+}
+
+// ── Camera Box ────────────────────────────────────────────────────────────────
 interface CameraBoxProps {
   onCapture: (dataUrl: string) => void;
   onClose: () => void;
@@ -106,7 +106,6 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
   const [ready, setReady] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Check torch support when stream is ready
   const handleUserMedia = useCallback((stream: MediaStream) => {
     streamRef.current = stream;
     const track = stream.getVideoTracks()[0];
@@ -131,7 +130,7 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
       ).applyConstraints({ advanced: [{ torch: newVal } as MediaTrackConstraintSet] });
       setFlashOn(newVal);
     } catch {
-      // torch not supported
+      /* torch not supported */
     }
   };
 
@@ -148,26 +147,7 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
 
   return (
     <div className="w-full rounded-xl overflow-hidden border border-outline-variant bg-black relative">
-      {/* Camera view */}
       <div className="relative w-full" style={{ height: 220 }}>
-        {!permissionDenied && (
-          <Webcam
-            ref={webcamRef}
-            audio={false}
-            screenshotFormat="image/jpeg"
-            screenshotQuality={0.92}
-            videoConstraints={{ facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }}
-            onUserMedia={handleUserMedia}
-            onUserMediaError={handleUserMediaError}
-            className="w-full h-full object-cover"
-            style={{
-              height: 220,
-              transform: facingMode === "user" ? "scaleX(-1)" : "none",
-            }}
-          />
-        )}
-
-        {/* Permission denied overlay */}
         {permissionDenied && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-container text-on-surface-variant px-6 text-center">
             <NoPhotographyOutlinedIcon style={{ fontSize: 40 }} className="text-outline" />
@@ -179,15 +159,24 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
             </p>
           </div>
         )}
-
-        {/* Loading overlay */}
         {!ready && !permissionDenied && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60">
             <p className="text-white/70 text-sm font-body">Memuat kamera...</p>
           </div>
         )}
-
-        {/* Top controls */}
+        {!permissionDenied && (
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            screenshotFormat="image/jpeg"
+            screenshotQuality={0.92}
+            videoConstraints={{ facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }}
+            onUserMedia={handleUserMedia}
+            onUserMediaError={handleUserMediaError}
+            className="w-full h-full object-cover"
+            style={{ height: 220, transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
+          />
+        )}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10">
           <button
             onClick={onClose}
@@ -209,8 +198,6 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
           )}
         </div>
       </div>
-
-      {/* Bottom controls */}
       {!permissionDenied && ready && (
         <div className="flex items-center justify-center gap-8 bg-black py-3">
           <button
@@ -219,7 +206,6 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
           >
             <FlipCameraAndroidOutlinedIcon style={{ fontSize: 20 }} />
           </button>
-          {/* Shutter */}
           <button
             onClick={takePhoto}
             className="w-12 h-12 rounded-full bg-white border-4 border-white/40 hover:scale-95 active:scale-90 transition-transform shadow-lg"
@@ -231,53 +217,10 @@ function CameraBox({ onCapture, onClose }: CameraBoxProps) {
   );
 }
 
-// ── Lansia Dropdown ────────────────────────────────────────────────────────────
-interface LansiaDropdownProps {
-  lansiaList: { id: string; nama: string; room?: string }[];
-  selectedId: string;
-  onChange: (id: string) => void;
-  isLoading: boolean;
-}
+// ── Lansia Dropdown ───────────────────────────────────────────────────────────
 
-function LansiaDropdown({ lansiaList, selectedId, onChange, isLoading }: LansiaDropdownProps) {
-  const selected = lansiaList.find((l) => l.id === selectedId);
 
-  return (
-    <div className="relative">
-      <select
-        value={selectedId ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={isLoading}
-        className="absolute inset-0 opacity-0 cursor-pointer w-full"
-      >
-        <option value="" disabled>
-          Pilih lansia...
-        </option>
-        {lansiaList.map((l) => (
-          <option key={l.id} value={l.id}>
-            {l.nama}
-          </option>
-        ))}
-      </select>
-      <div className="flex items-center gap-2 bg-surface-container rounded-2xl px-3 py-2 border border-outline-variant cursor-pointer hover:bg-surface-container-high transition-colors">
-        <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant shrink-0">
-          <AccountCircleOutlinedIcon fontSize="small" />
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold font-headline text-on-surface leading-tight truncate">
-            {isLoading ? "Memuat..." : (selected?.nama ?? "Pilih Lansia")}
-          </span>
-          <span className="text-xs text-on-surface-variant font-body">
-            {selected ? "Lansia aktif" : "Belum dipilih"}
-          </span>
-        </div>
-        <KeyboardArrowDownIcon fontSize="small" className="text-on-surface-variant ml-1 shrink-0" />
-      </div>
-    </div>
-  );
-}
-
-// ── Select Field ───────────────────────────────────────────────────────────────
+// ── Select Field ──────────────────────────────────────────────────────────────
 function SelectField({
   options,
   value,
@@ -294,9 +237,7 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-sm font-body pr-8 focus:outline-none focus:border-primary transition-colors cursor-pointer ${
-          value ? "text-on-surface" : "text-outline"
-        }`}
+        className={`w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-sm font-body pr-8 focus:outline-none focus:border-primary transition-colors cursor-pointer ${value ? "text-on-surface" : "text-outline"}`}
       >
         <option value="" disabled hidden>
           {placeholder}
@@ -315,26 +256,34 @@ function SelectField({
   );
 }
 
-// ── dataUrlToFile helper ───────────────────────────────────────────────────────
-function dataUrlToFile(dataUrl: string, filename: string): File {
-  const arr = dataUrl.split(",");
-  const mime = arr[0].match(/:(.*?);/)![1];
-  const bstr = atob(arr[1]);
-  const u8arr = new Uint8Array(bstr.length);
-  for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
-  return new File([u8arr], filename, { type: mime });
+// ── Riwayat Skeleton ──────────────────────────────────────────────────────────
+function RiwayatSkeleton() {
+  return (
+    <div className="flex gap-3 items-start animate-pulse">
+      <div className="pt-1.5 shrink-0">
+        <div className="w-2.5 h-2.5 rounded-full bg-surface-container-high" />
+      </div>
+      <div className="w-14 h-14 rounded-xl bg-surface-container-high shrink-0" />
+      <div className="flex flex-col gap-1.5 flex-1">
+        <div className="h-2.5 w-24 rounded-full bg-surface-container-high" />
+        <div className="h-2 w-16 rounded-full bg-surface-container" />
+        <div className="h-2 w-full rounded-full bg-surface-container" />
+        <div className="h-4 w-14 rounded-full bg-surface-container-high mt-0.5" />
+      </div>
+    </div>
+  );
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function PindaiRaga() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutate: tambahGaleri, isPending } = useTambahGaleri();
   const { data: lansiaList = [], isLoading: lansiaLoading } = useGetLansiaByPengurus();
   const { success: showSuccess, error: showError } = useToast();
 
-  const [selectedLansiaId, setSelectedLansiaId] = useState<string | null>(() => {
-  return lansiaList[0]?.id ?? null;
-});
+  const [selectedLansiaId, setSelectedLansiaId] = useState<string | null>(
+    () => lansiaList[0]?.id ?? null
+  );
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -342,12 +291,17 @@ export default function PindaiRaga() {
   const [deskripsi, setDeskripsi] = useState("");
   const [lokasi, setLokasi] = useState("");
 
-  // Auto-select first lansia
+  // ── Fetch riwayat berdasarkan lansia yang dipilih ──────────────────────────
+  const {
+    data: riwayatList = [],
+    isLoading: riwayatLoading,
+    isError: riwayatError,
+  } = useGetGaleriByLansia(selectedLansiaId);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
     if (file.size > 10 * 1024 * 1024) {
-      showError(`File terlalu besar. Maks 10MB.`);
+      showError("File terlalu besar. Maks 10MB.");
       return;
     }
     setPhotoFile(file);
@@ -367,6 +321,14 @@ export default function PindaiRaga() {
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
+  };
+
+  const handleCancel = () => {
+    setPhoto(null);
+    setPhotoFile(null);
+    setDeskripsi("");
+    setLokasi("");
+    setShowCamera(false);
   };
 
   const handleSave = () => {
@@ -408,14 +370,6 @@ export default function PindaiRaga() {
     });
   };
 
-  const handleCancel = () => {
-    setPhoto(null);
-    setPhotoFile(null);
-    setDeskripsi("");
-    setLokasi("");
-    setShowCamera(false);
-  };
-
   return (
     <div className="flex flex-col gap-6 p-8 min-h-screen bg-surface">
       {/* Header */}
@@ -429,8 +383,6 @@ export default function PindaiRaga() {
             mendetail untuk panduan tim perawat.
           </p>
         </div>
-
-        {/* Lansia selector */}
         <LansiaDropdown
           lansiaList={lansiaList}
           selectedId={selectedLansiaId!}
@@ -447,12 +399,10 @@ export default function PindaiRaga() {
             Dokumentasikan Kondisi Baru
           </h2>
 
-          {/* Camera Box (inline) */}
           {showCamera && (
             <CameraBox onCapture={handleCameraCapture} onClose={() => setShowCamera(false)} />
           )}
 
-          {/* Photo preview */}
           {!showCamera && photo && (
             <div
               className="relative w-full rounded-xl overflow-hidden border border-outline-variant"
@@ -472,7 +422,6 @@ export default function PindaiRaga() {
             </div>
           )}
 
-          {/* Upload dropzone */}
           {!showCamera && !photo && (
             <div
               onDrop={handleDrop}
@@ -532,7 +481,6 @@ export default function PindaiRaga() {
             }}
           />
 
-          {/* Deskripsi */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium font-body text-on-surface-variant">
               Deskripsi &amp; Konteks
@@ -547,7 +495,6 @@ export default function PindaiRaga() {
             />
           </div>
 
-          {/* Lokasi */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium font-body text-on-surface-variant">
               Lokasi pada Tubuh
@@ -560,7 +507,6 @@ export default function PindaiRaga() {
             />
           </div>
 
-          {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-1">
             <button
               onClick={handleCancel}
@@ -580,7 +526,7 @@ export default function PindaiRaga() {
         </div>
 
         {/* Right — Riwayat */}
-        <div className="w-[260px] shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 flex flex-col gap-4">
+        <div className="w-70 shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <HistoryOutlinedIcon fontSize="small" className="text-on-surface-variant" />
             <h2 className="text-base font-bold font-headline text-on-surface">
@@ -588,39 +534,69 @@ export default function PindaiRaga() {
             </h2>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {RIWAYAT_DATA.map((item) => (
-              <div key={item.id} className="flex gap-3 items-start">
-                <div className="flex flex-col items-center pt-1.5 shrink-0">
-                  <FiberManualRecordIcon
-                    style={{ fontSize: 10 }}
-                    className={item.active ? "text-primary" : "text-outline-variant"}
-                  />
-                </div>
-                <div className="w-14 h-14 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 overflow-hidden border border-outline-variant">
-                  <ImageOutlinedIcon fontSize="small" className="text-outline" />
-                </div>
-                <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <span className="text-xs font-bold font-headline text-on-surface leading-tight">
-                    {item.title}
-                  </span>
-                  <span className="text-[10px] text-on-surface-variant font-body">{item.date}</span>
-                  <p className="text-[11px] text-on-surface-variant font-body leading-snug line-clamp-2">
-                    {item.description}
-                  </p>
-                  <span
-                    className={`self-start text-[10px] font-bold font-label tracking-wide uppercase px-2 py-0.5 rounded-full mt-0.5 ${badgeConfig[item.badge]}`}
-                  >
-                    {item.badge}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="flex flex-col gap-4">
+            {riwayatLoading ? (
+              <>
+                <RiwayatSkeleton />
+                <RiwayatSkeleton />
+                <RiwayatSkeleton />
+              </>
+            ) : riwayatError ? (
+              <p className="text-xs text-error font-body text-center py-4">Gagal memuat riwayat.</p>
+            ) : riwayatList.length === 0 ? (
+              <p className="text-xs text-on-surface-variant font-body text-center py-4">
+                Belum ada riwayat untuk lansia ini.
+              </p>
+            ) : (
+              riwayatList.map((item, idx) => {
+                const cfg = tingkatConfig[item.tingkat_darurat] ?? tingkatConfig.ringan;
+                const isFirst = idx === 0;
+                return (
+                  <div key={item.id} className="flex gap-3 items-start">
+                    {/* Timeline dot */}
+                    <div className="flex flex-col items-center pt-1.5 shrink-0">
+                      <FiberManualRecordIcon
+                        style={{ fontSize: 10 }}
+                        className={isFirst ? "text-primary" : "text-outline-variant"}
+                      />
+                    </div>
 
-          <button className="text-sm font-semibold font-body text-primary text-center hover:underline transition-all mt-1">
-            View Full History
-          </button>
+                    {/* Thumbnail */}
+                    <div className="w-14 h-14 rounded-xl shrink-0 overflow-hidden border border-outline-variant bg-surface-container-high flex items-center justify-center">
+                      {item.foto_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.foto_url}
+                          alt={item.lokasi_luka}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageOutlinedIcon fontSize="small" className="text-outline" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <span className="text-xs font-bold font-headline text-on-surface leading-tight capitalize">
+                        {item.lokasi_luka}
+                      </span>
+                      <span className="text-[10px] text-on-surface-variant font-body">
+                        {formatTanggal(item.created_at)}
+                      </span>
+                      <p className="text-[11px] text-on-surface-variant font-body leading-snug line-clamp-2">
+                        {item.deskripsi}
+                      </p>
+                      <span
+                        className={`self-start text-[10px] font-bold font-label tracking-wide uppercase px-2 py-0.5 rounded-full mt-0.5 ${cfg.badge}`}
+                      >
+                        {item.tingkat_darurat}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

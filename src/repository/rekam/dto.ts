@@ -1,10 +1,11 @@
-export type TingkatDarurat = "rendah" | "sedang" | "tinggi" | "kritis";
+export type TingkatDarurat = "ringan" | "sedang" | "tinggi" | "kritis";
 
 export interface TambahGaleriRequest {
   lansia_id: string;
   foto: File;
   lokasi_luka: string;
   deskripsi: string;
+  jenis_kondisi: string
 }
 
 export interface GaleriData {
@@ -24,4 +25,10 @@ export interface TambahGaleriResponse {
   success: boolean;
   message: string;
   data: GaleriData;
+}
+
+export interface GetGaleriResponse {
+  success: boolean;
+  message: string;
+  data: GaleriData[];
 }
