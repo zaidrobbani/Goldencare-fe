@@ -7,7 +7,6 @@ const BACKEND_URL =
   process.env.NEXT_BASE_API_URL ||
   process.env.NEXT_PUBLIC_BASE_API_URL ||
   "";
-
 // ── Public instance ────────────────────────────────────────────────────────────
 // For unauthenticated requests (login, register, public endpoints)
 export const axiosPublic = axios.create({

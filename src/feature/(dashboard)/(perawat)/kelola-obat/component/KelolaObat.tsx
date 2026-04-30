@@ -9,6 +9,11 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MedicationOutlinedIcon from "@mui/icons-material/MedicationOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import { useTambahObat } from "@/repository/obat/query";
+import { useGetLansiaByPengurus } from "@/repository/lansia/query";
+import { useToast } from "@/shared/Toast/ToastProvider";
+import { JadwalObatItem, Shift } from "@/repository/obat/dto";
+import DropDown from "@/shared/DropDown/DropDown";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type StatusType = "TERLEWAT" | "DIJADWALKAN" | "DIBERIKAN" | "PENDING";
@@ -45,7 +50,7 @@ const JADWAL_DATA: JadwalGroup[] = [
       {
         id: 1,
         patientName: "Eleanor Vance",
-        patientAvatar: "/AB6AXuBRd6avZTGM7n_ujxu08pMu60eCX29wjBFLoQ9C1RIj4lYsqnC-3CNvFeaAZvnWacpKrhL3pNh9lWzV4aDqtGNcDexVrfiRd_NDQJ45vjQNO17TJazYX0uXpSRNpJb46nBYEOS-ybSA5ARw7Y_RSuhDvKzooK0yC1yT94LWnmCzUcOWmBAjJ3PeMkckfCKT3_8WMB2XlQGUX4ZQY_QYSi-o33yG96m9vbJ5JM2pCorNCFENHQlE.webp",
+        patientAvatar: "/avatars/eleanor.jpg",
         room: "Room 204",
         drug: "Lisinopril (Zestril)",
         dose: "10mg",
@@ -55,7 +60,7 @@ const JADWAL_DATA: JadwalGroup[] = [
       {
         id: 2,
         patientName: "Arthur Pendelton",
-        patientAvatar: "/AB6AXuDOC-gEGBJs0DAMdAIdN8tQe-_yhjx2_Cgj7yzw9sqUtCn1BvgnkZjt3M2cJEt20Ub9_eKH1TWG5Qx4NkFqegIY7egpGTXI37vt7VUnf-O9QnLvzwjzBCpJ21LE3-3RaRb2gsPWxOsihNNFaHKY9wshppx__Qwl6hz7LRUkkBPeUiBqUM3Fb7M8ODHHwgchm_GCdtoJz9uQIswr3MbLyW9lK2GIQgwz1aV0c1on0ULttjkXv-V2.webp",
+        patientAvatar: "/avatars/arthur.jpg",
         room: "Room 112",
         drug: "Metformin",
         dose: "500mg",
@@ -66,7 +71,7 @@ const JADWAL_DATA: JadwalGroup[] = [
       {
         id: 3,
         patientName: "Maria Consuelo",
-        patientAvatar: "/AB6AXuDQsxIBucckX1BAVcGWi88xFbIRp5kFujSJdwdNv_CpPZp_FUplvtYQ9lbLAGfcSfq_jbj-2UlEX21HYMv1WhEM8TUDkaksK-lqAkPVzMs_lEq5pw2aiV_ClryvYhlhshGppyg2jtJoUF43cNQGGp8ybpUPVgJ2KiylmfJrHiBWSkelXcBB7mqtw3gRW4bDh5hwgOYZHISvsTygrUOVn4AbzgCArMp5USNeaat2JLG7WcWEjBJ_.webp",
+        patientAvatar: "/avatars/maria.jpg",
         room: "Room 301",
         drug: "Atorvastatin",
         dose: "20mg",
@@ -85,7 +90,7 @@ const JADWAL_DATA: JadwalGroup[] = [
       {
         id: 4,
         patientName: "Eleanor Vance",
-        patientAvatar: "/AB6AXuDRzyOnU9yfrIak_caetIfgAq4e7bIolZpu3Pm9rM4NZ2R6NiK06dmb4hrInlPx8BvlYvhEJTkx-Bj7raiufG97bmazFhtIlkws-FC2XkBXr8mdFq_7EtNru_9PyLHd__s5xljKr1IrshpkpZQ1MLMxxdP1WXrFmKci3yojP5rvKKIN19SlAQzZO3WzPShszLeoURKfeFJ5W9QCe3zlheCyTr9ostswKIKskAic-A6hshNu66Z9.webp",
+        patientAvatar: "/avatars/eleanor.jpg",
         room: "Room 204",
         drug: "Albuterol Inhaler",
         dose: "2 Puffs",
@@ -96,7 +101,7 @@ const JADWAL_DATA: JadwalGroup[] = [
       {
         id: 5,
         patientName: "Budi Santoso",
-        patientAvatar: "/AB6AXuDRzyOnU9yfrIak_caetIfgAq4e7bIolZpu3Pm9rM4NZ2R6NiK06dmb4hrInlPx8BvlYvhEJTkx-Bj7raiufG97bmazFhtIlkws-FC2XkBXr8mdFq_7EtNru_9PyLHd__s5xljKr1IrshpkpZQ1MLMxxdP1WXrFmKci3yojP5rvKKIN19SlAQzZO3WzPShszLeoURKfeFJ5W9QCe3zlheCyTr9ostswKIKskAic-A6hshNu66Z9.webp",
+        patientAvatar: "/avatars/budi.jpg",
         room: "Room 105",
         drug: "Amlodipine",
         dose: "5mg",
@@ -108,14 +113,6 @@ const JADWAL_DATA: JadwalGroup[] = [
   },
 ];
 
-const LANSIA_OPTIONS = [
-  "Eleanor Vance",
-  "Arthur Pendelton",
-  "Maria Consuelo",
-  "Budi Santoso",
-  "Siti Rahayu",
-  "Hendra Kusuma",
-];
 
 const RUTE_OPTIONS = ["Oral", "Inhaler", "Injeksi", "Topikal", "Sublingual", "With Food"];
 
@@ -151,9 +148,7 @@ const statusConfig: Record<
   PENDING: {
     label: "PENDING",
     containerClass: "bg-surface-container-lowest border-outline-variant",
-    indicatorEl: (
-      <div className="w-8 h-8 rounded-full border-2 border-outline-variant shrink-0" />
-    ),
+    indicatorEl: <div className="w-8 h-8 rounded-full border-2 border-outline-variant shrink-0" />,
   },
 };
 
@@ -256,10 +251,7 @@ function JadwalSection({ group }: { group: JadwalGroup }) {
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center pt-1 shrink-0">
         <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1 shrink-0 z-10" />
-        <div
-          className="w-0.5 bg-primary/30 flex-1 mt-1"
-          style={{ minHeight: 16 }}
-        />
+        <div className="w-0.5 bg-primary/30 flex-1 mt-1" style={{ minHeight: 16 }} />
       </div>
 
       {/* Content */}
@@ -272,13 +264,11 @@ function JadwalSection({ group }: { group: JadwalGroup }) {
               group.icon === "pagi"
                 ? "text-tertiary"
                 : group.icon === "siang"
-                ? "text-tertiary-fixed-dim"
-                : "text-outline"
+                  ? "text-tertiary-fixed-dim"
+                  : "text-outline"
             }
           />
-          <span className="text-base font-bold font-headline text-on-surface">
-            {group.label}
-          </span>
+          <span className="text-base font-bold font-headline text-on-surface">{group.label}</span>
           <span className="text-xs text-on-surface-variant font-body bg-surface-container px-2.5 py-1 rounded-full">
             {group.timeRange}
           </span>
@@ -297,20 +287,86 @@ function JadwalSection({ group }: { group: JadwalGroup }) {
 
 // ── Quick Add Panel ────────────────────────────────────────────────────────────
 function QuickAddPanel() {
-  const [selectedLansia, setSelectedLansia] = useState("");
+  const { mutate: tambah, isPending } = useTambahObat();
+  const { data: lansiaList = [], isLoading: lansiaLoading } = useGetLansiaByPengurus();
+  const { success: showSuccess, error: showError } = useToast();
+
+  // ── Form state ───────────────────────────────────────────────────────────────
+  const [lansiaId, setLansiaId] = useState("");
   const [namaObat, setNamaObat] = useState("");
   const [dosis, setDosis] = useState("");
-  const [rute, setRute] = useState("Oral");
-  const [schedules, setSchedules] = useState<string[]>(["Pagi"]);
+  const [caraPemberian, setCaraPemberian] = useState("Oral");
+  const [jadwals, setJadwals] = useState<JadwalObatItem[]>([{ shift: "Pagi", jam: "08:00" }]);
 
-  const toggleSchedule = (s: string) => {
-    setSchedules((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-    );
+  const RUTE_OPTIONS = ["Oral", "Inhaler", "Injeksi", "Topikal", "Sublingual", "With Food"];
+  const SHIFT_LIST: Shift[] = ["Pagi", "Siang", "Sore"];
+
+  const DEFAULT_JAM: Record<Shift, string> = {
+    Pagi: "08:00",
+    Siang: "12:00",
+    Sore: "17:00",
   };
 
+  // ── Toggle shift ─────────────────────────────────────────────────────────────
+  function toggleShift(shift: Shift) {
+    const exists = jadwals.find((j) => j.shift === shift);
+    if (exists) {
+      setJadwals((prev) => prev.filter((j) => j.shift !== shift));
+    } else {
+      setJadwals((prev) => [...prev, { shift, jam: DEFAULT_JAM[shift] }]);
+    }
+  }
+
+  function resetForm() {
+    setLansiaId("");
+    setNamaObat("");
+    setDosis("");
+    setCaraPemberian("Oral");
+    setJadwals([{ shift: "Pagi", jam: "08:00" }]);
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
+  function handleSubmit() {
+    if (!lansiaId || !namaObat || !dosis || !caraPemberian) {
+      showError("Semua field wajib diisi");
+      return;
+    }
+    if (jadwals.length === 0) {
+      showError("Pilih minimal satu jadwal shift");
+      return;
+    }
+
+    tambah(
+      {
+        lansia_id: lansiaId,
+        nama_obat: namaObat,
+        dosis,
+        cara_pemberian: caraPemberian,
+        keterangan: "",
+        jadwals,
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            showError(result.error || "Gagal menambahkan obat");
+            return;
+          }
+          showSuccess("Obat berhasil ditambahkan");
+          resetForm();
+        },
+        onError: (error) => {
+          const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+            error?.message ??
+            "Gagal menambahkan obat";
+          showError(message);
+        },
+      }
+    );
+  }
+
   return (
-    <div className="w-[240px] shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 flex flex-col gap-4">
+    <div className="w-60 shrink-0 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-5 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-start gap-2">
         <div className="w-8 h-8 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0">
@@ -325,22 +381,13 @@ function QuickAddPanel() {
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium font-body text-on-surface-variant">Lansia</label>
         <div className="relative">
-          <select
-            value={selectedLansia}
-            onChange={(e) => setSelectedLansia(e.target.value)}
-            className={`w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-xs font-body pr-7 focus:outline-none focus:border-primary transition-colors cursor-pointer ${
-              selectedLansia ? "text-on-surface" : "text-outline"
-            }`}
-          >
-            <option value="" disabled hidden>Pilih lansia...</option>
-            {LANSIA_OPTIONS.map((l) => (
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
-          <KeyboardArrowDownIcon
-            fontSize="small"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-            style={{ fontSize: 16 }}
+          <DropDown<string>
+            placeholder="Pilih lansia..."
+            value={lansiaId}
+            onChange={setLansiaId}
+            options={lansiaList.map((l) => ({ value: l.id, label: l.nama }))}
+            disabled={isPending || lansiaLoading}
+            label=""
           />
         </div>
       </div>
@@ -353,11 +400,12 @@ function QuickAddPanel() {
           placeholder="e.g., Amoxicillin"
           value={namaObat}
           onChange={(e) => setNamaObat(e.target.value)}
-          className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-xs text-on-surface font-body placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+          disabled={isPending}
+          className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-xs text-on-surface font-body placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
         />
       </div>
 
-      {/* Dosis + Rute */}
+      {/* Dosis + Cara Pemberian */}
       <div className="flex gap-2">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <label className="text-xs font-medium font-body text-on-surface-variant">Dosis</label>
@@ -366,19 +414,23 @@ function QuickAddPanel() {
             placeholder="e.g., 250mg"
             value={dosis}
             onChange={(e) => setDosis(e.target.value)}
-            className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-xs text-on-surface font-body placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+            disabled={isPending}
+            className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2.5 text-xs text-on-surface font-body placeholder:text-outline focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
           />
         </div>
-        <div className="flex flex-col gap-1.5 w-[80px] shrink-0">
+        <div className="flex flex-col gap-1.5 w-20 shrink-0">
           <label className="text-xs font-medium font-body text-on-surface-variant">Pemberian</label>
           <div className="relative">
             <select
-              value={rute}
-              onChange={(e) => setRute(e.target.value)}
-              className="w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-2 py-2.5 text-xs font-body pr-5 focus:outline-none focus:border-primary transition-colors cursor-pointer text-on-surface"
+              value={caraPemberian}
+              onChange={(e) => setCaraPemberian(e.target.value)}
+              disabled={isPending}
+              className="w-full appearance-none bg-surface-container-low border border-outline-variant rounded-xl px-2 py-2.5 text-xs font-body pr-5 focus:outline-none focus:border-primary transition-colors cursor-pointer text-on-surface disabled:opacity-50"
             >
               {RUTE_OPTIONS.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
             </select>
             <KeyboardArrowDownIcon
@@ -391,22 +443,25 @@ function QuickAddPanel() {
 
       {/* Schedule Window */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium font-body text-on-surface-variant">Schedule Window</label>
+        <label className="text-xs font-medium font-body text-on-surface-variant">
+          Schedule Window
+        </label>
         <div className="flex flex-wrap gap-2">
-          {["Pagi", "Siang", "Sore"].map((s) => {
-            const active = schedules.includes(s);
+          {SHIFT_LIST.map((shift) => {
+            const active = jadwals.some((j) => j.shift === shift);
             return (
               <button
-                key={s}
+                key={shift}
                 type="button"
-                onClick={() => toggleSchedule(s)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold font-body transition-colors ${
+                onClick={() => toggleShift(shift)}
+                disabled={isPending}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold font-body transition-colors disabled:opacity-50 ${
                   active
                     ? "bg-primary text-on-primary"
                     : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
                 }`}
               >
-                {s}
+                {shift}
               </button>
             );
           })}
@@ -416,9 +471,11 @@ function QuickAddPanel() {
       {/* CTA */}
       <button
         type="button"
-        className="w-full bg-primary-container text-on-primary-container font-semibold text-sm font-body py-3 rounded-2xl hover:opacity-90 active:opacity-80 transition-opacity leading-snug"
+        onClick={handleSubmit}
+        disabled={isPending}
+        className="w-full bg-on-primary-fixed-variant cursor-pointer text-on-primary-container font-semibold text-sm font-body py-3 rounded-2xl hover:opacity-90 active:opacity-80 transition-opacity leading-snug disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Konfirmasi &amp; Tambahkan Jadwal
+        {isPending ? "Menyimpan..." : "Konfirmasi & Tambahkan Jadwal"}
       </button>
     </div>
   );

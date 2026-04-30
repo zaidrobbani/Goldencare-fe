@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 const JurnalJagaContainer = () => {
   const { user } = useAuthStore();
 
-  if (!user || (user.role !== "perawat" && user.role !== "superadmin")) {
+  if (!user || (user.role !== "pengurus" && user.role !== "superadmin")) {
     redirect("/login");
   }
 

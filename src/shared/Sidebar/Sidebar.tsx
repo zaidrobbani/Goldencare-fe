@@ -35,7 +35,7 @@ export interface SidebarProps {
 
 const navItems: Navigation[] = [
   {
-    roles: "perawat",
+    roles: "pengurus",
     navItems: [
       {
         label: "Pindai Raga",
@@ -73,7 +73,7 @@ const navItems: Navigation[] = [
         icon: <GroupsOutlinedIcon fontSize="small" />,
       },
       {
-        label: "Pusat Pengurus",
+        label: "Pusat Perawat",
         href: "/pusat-pengurus",
         icon: <MedicationOutlinedIcon fontSize="small" />,
       },

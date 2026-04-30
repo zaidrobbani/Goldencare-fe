@@ -39,7 +39,7 @@ export default function Login() {
       router.push("/dashboard");
     }
 
-    if (role === "perawat") {
+    if (role === "pengurus") {
       router.push("/jurnal-jaga");
     }
   }, [user, router]);
@@ -63,7 +63,7 @@ export default function Login() {
           if (role === "superadmin") router.push("/dashboard");
           if (role === "keluarga") router.push("/memori-tamu");
           if (role === "pengelola") router.push("/dashboard");
-          if (role === "perawat") router.push("/jurnal-jaga");
+          if (role === "pengurus") router.push("/jurnal-jaga");
         },
 
         onError: (err) => {

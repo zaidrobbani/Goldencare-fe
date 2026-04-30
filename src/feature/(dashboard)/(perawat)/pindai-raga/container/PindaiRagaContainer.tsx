@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 const PindaiRagaContainer = () => {
   const { user } = useAuthStore();
 
-  if (!user || (user.role !== "perawat" && user.role !== "superadmin")) {
+  if (!user || (user.role !== "pengurus" && user.role !== "superadmin")) {
     redirect("/login");
   }
 

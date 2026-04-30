@@ -1,4 +1,4 @@
-export type Roles = "perawat" | "keluarga" | "pengelola" | "superadmin" | "pengurus";
+export type Roles = "keluarga" | "pengelola" | "superadmin" | "pengurus";
 
 // ── Request ────────────────────────────────────────────────────────────────────
 export interface LoginRequest {
