@@ -27,7 +27,7 @@ jobs:
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
-            cd ~/apps/goldencare
+            cd ~/Goldencare-fe
 
             echo "==> Pulling latest code..."
             git pull origin main
